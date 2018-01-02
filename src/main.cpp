@@ -95,7 +95,7 @@ void loop() {
 		static uint8_t pv_node_read= 		0; 			 //Set pv node index to read
 		static uint8_t genset_node_read= 	0;			 //Set genset node index to read
 
-		//READ GENSETS VARIABLES
+
 		switch(scheduler){
 			case scheduler_read_genset:
 				//Actual node modbus variables transactions was finished

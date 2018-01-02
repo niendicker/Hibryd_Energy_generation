@@ -108,7 +108,7 @@ void pv_set_timeout	(uint16_t new_timeout);
 bool pv_read_modbus_variables(uint8_t pv_node_read);
 
 /*------------------------------------------------------------------
- *Read modbus variables from PV systemS
+ *Read modbus variables from PV system
  *----------------------------------------------------------------*/
 void pv_read_modbus_variables();
 
