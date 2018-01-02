@@ -138,7 +138,7 @@ void loop() {
 		prev_millis_100= millis(); //Update before code can increase the accuracy?
 
 		//KEYBOARD
-		if(keyboard_flag_sync != no_key_pressed){
+		if(keyboard_flag_sync){
 			Serial.println("manage_keyboard()");
 			manage_keyboard();
 		}
