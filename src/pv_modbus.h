@@ -450,20 +450,20 @@ uint8_t pv_read_nominal_power(uint8_t node_index){
 void pv_update_communication_status(uint8_t node_index, bool sucess){
 	switch (pv_nodes[node_index].node_communication_status) {
 		case connected:
-			if(!sucess){
+			if(!sucess){//Increment the error counter and set the new status
 				pv_nodes[node_index].node_comm_error_counter++;
 				pv_nodes[node_index].node_communication_status= timeout;
 				pv_flag_sync|= pv_sync_comm_status;
 			}
 			break;
 		case timeout:
-			if(sucess){
+			if(sucess){//Decrement the error counter and check the new status
 				if(--pv_nodes[node_index].node_comm_error_counter == pv_min_comm_errors){
 					pv_nodes[node_index].node_communication_status= connected;
 					pv_flag_sync|= pv_sync_comm_status;
 				}
 			}
-			else{
+			else{//Increment the error counter and check the new status
 				if(++pv_nodes[node_index].node_comm_error_counter == pv_max_comm_errors){
 					pv_nodes[node_index].node_communication_status= disconnected;
 					pv_flag_sync|= pv_sync_comm_status;
@@ -471,7 +471,7 @@ void pv_update_communication_status(uint8_t node_index, bool sucess){
 			}
 			break;
 		case disconnected:
-				if(sucess){
+				if(sucess){//Decrement the error counter and set the new status
 					pv_nodes[node_index].node_comm_error_counter--;
 					pv_nodes[node_index].node_communication_status= timeout;
 					pv_flag_sync|= pv_sync_comm_status;
