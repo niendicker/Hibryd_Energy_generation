@@ -183,14 +183,14 @@ void pv_init_modbus(uint8_t addr){
 
 	//Synchronization variables
 	pv_global_node_index= 0;
-	pv_variable_modbus= 0;
+	pv_variable_modbus&= pv_sync_none;
 
 	//PV system total calculation
 	pv_active_power_total= 0;  //Actual deliverable power (ADPt) - Sum of all inverters
 	pv_nominal_power_total= 0; //Deliverable power total (DPt) - Sum of all inverters
 
 	//Modbus new data available synchronization flag
-	pv_flag_sync= 0;
+	pv_flag_sync&= pv_sync_none;
 }
 
 /*------------------------------------------------------------------
@@ -282,7 +282,7 @@ void manage_pv_system(){
  *Callback function for all successful modbus transactions
  *----------------------------------------------------------------*/
 void pv_successful_transaction(){
-	if(pv_variable_modbus == pv_sync_active_power){
+	if(pv_variable_modbus & pv_sync_active_power){
 		uint32_t active_power= 0x00000000;
 		uint16_t register_low= pv_node.getResponseBuffer(0x00);
 		uint16_t register_high= pv_node.getResponseBuffer(0x01);
@@ -304,7 +304,7 @@ void pv_successful_transaction(){
 		//Reset flag
 		pv_variable_modbus&= ~pv_sync_active_power;
 	}
-	else if(pv_variable_modbus == pv_sync_nominal_power){
+	else if(pv_variable_modbus & pv_sync_nominal_power){
 		uint32_t nominal_power= 0x00000000;
 		uint16_t register_low= pv_node.getResponseBuffer(0x00);
 		uint16_t register_high= pv_node.getResponseBuffer(0x01);
@@ -338,11 +338,11 @@ void pv_timeout_transaction(){
 	Serial.println("------------ PV Timeout -----------------");
 	Serial.println(pv_global_node_index);
 
-	if(pv_variable_modbus == pv_sync_active_power){
+	if(pv_variable_modbus & pv_sync_active_power){
 		//Reset flag
 		pv_variable_modbus&= ~pv_sync_active_power;
 	}
-	else if(pv_variable_modbus == pv_sync_nominal_power){
+	else if(pv_variable_modbus & pv_sync_nominal_power){
 		//Reset flag
 		pv_variable_modbus&= ~pv_sync_nominal_power;
 	}

@@ -174,14 +174,14 @@ void genset_init_modbus(uint8_t addr){
 
 	//Synchronization variables
 	genset_global_node_index= 0;
-	genset_variable_modbus= genset_sync_none;
+	genset_variable_modbus&= genset_sync_none;
 
 	//Gensets total calculation
 	genset_active_power_total= 0; //Actual deliverable power (ADPt) - Sum of all gensets
 	genset_nominal_power_total= 0; //Deliverable power total (DPt) - Sum of all gensets
 
 	//Modbus new data available synchronization flag
-	genset_flag_sync= genset_sync_none;
+	genset_flag_sync&= genset_sync_none;
 }
 
 /*------------------------------------------------------------------
@@ -283,7 +283,7 @@ void manage_genset_system(){
  *Callback function for all successful modbus transactions
  *----------------------------------------------------------------*/
 void genset_successful_transaction(){
-	if(genset_variable_modbus == genset_sync_active_power){
+	if(genset_variable_modbus & genset_sync_active_power){
 		uint32_t active_power= 0x00000000;
 		uint16_t register_low= genset_node.getResponseBuffer(0x00);
 		uint16_t register_high= genset_node.getResponseBuffer(0x01);
@@ -305,7 +305,7 @@ void genset_successful_transaction(){
 		//Reset flag
 		genset_variable_modbus&= ~genset_sync_active_power;
 	}
-	else if(genset_variable_modbus == genset_sync_nominal_power){
+	else if(genset_variable_modbus & genset_sync_nominal_power){
 		uint32_t nominal_power= 0x00000000;
 		uint16_t register_low= genset_node.getResponseBuffer(0x00);
 		uint16_t register_high= genset_node.getResponseBuffer(0x01);
@@ -339,11 +339,11 @@ void genset_timeout_transaction(){
 	Serial.println("------------ Genset Timeout -----------------");
 	Serial.println(genset_global_node_index);
 
-	if(genset_variable_modbus == genset_sync_active_power){
+	if(genset_variable_modbus & genset_sync_active_power){
 		//Reset flag
 		genset_variable_modbus&= ~genset_sync_active_power;
 	}
-	else if(genset_variable_modbus == genset_sync_nominal_power){
+	else if(genset_variable_modbus & genset_sync_nominal_power){
 		//Reset flag
 		genset_variable_modbus&= ~genset_sync_nominal_power;
 	}
