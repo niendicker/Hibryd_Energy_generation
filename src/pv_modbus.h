@@ -71,7 +71,6 @@ uint32_t pv_nominal_power_total; //Deliverable power total (DPt) - Sum of all in
 uint16_t pv_flag_sync;
 
 //Modbus transactions synchronization
-bool pv_comm_ongoing;			//Modbus transaction ongoing with some node
 uint8_t pv_global_node_index; 	//Used for update node communication status
 uint16_t pv_variable_modbus; 	//Used to identify the modbus transaction for successful transaction
 								//callback function and for main loop scheduler
@@ -183,7 +182,6 @@ void pv_init_modbus(uint8_t addr){
 	}
 
 	//Synchronization variables
-	pv_comm_ongoing= false;
 	pv_global_node_index= 0;
 	pv_variable_modbus= 0;
 
@@ -328,9 +326,6 @@ void pv_successful_transaction(){
 		//Reset flag
 		pv_variable_modbus&= ~pv_sync_nominal_power;
 	}
-
-	//Enable new transaction
-	pv_comm_ongoing= false;
 }
 
 /*------------------------------------------------------------------
@@ -351,9 +346,6 @@ void pv_timeout_transaction(){
 		//Reset flag
 		pv_variable_modbus&= ~pv_sync_nominal_power;
 	}
-
-	//Enable new transaction
-	pv_comm_ongoing= false;
 }
 
 /*-----------------------------------------------------------------
@@ -391,7 +383,6 @@ uint8_t pv_read_active_power(uint8_t node_index){
 			break;
 	}
 
-	pv_comm_ongoing= true;
 	pv_global_node_index= node_index; 		//Signaling the node that is communicating
 	pv_variable_modbus|= pv_sync_active_power; 	//Signaling the variable that is being read
 
@@ -436,7 +427,6 @@ uint8_t pv_read_nominal_power(uint8_t node_index){
 			break;
 	}
 
-	pv_comm_ongoing= true;
 	pv_global_node_index= node_index; 		//Signaling the node that is communicating
 	pv_variable_modbus|= pv_sync_nominal_power; //Signaling the variable that is being read
 
