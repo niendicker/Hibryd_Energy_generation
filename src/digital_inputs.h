@@ -85,6 +85,12 @@ volatile uint16_t digital_inputs_sync_flag;
 void init_digital_inputs();
 
 /*------------------------------------------------------------------
+ * Manage the digital inputs logic and physical status.
+ * Function called from main loop when the synchronization flag is set
+ * ----------------------------------------------------------------*/
+void manage_digital_inputs();
+
+/*------------------------------------------------------------------
  * Manage the physical and logical status of each digital input
  * @digital_input is the hardware pin number used as digital input
  * ----------------------------------------------------------------*/
@@ -161,7 +167,6 @@ void manage_digital_inputs(){
 	di_logical_states= di_physical_states ^ di_logic_selection;
 
 }
-
 
 /*------------------------------------------------------------------
  * Manage the physical status of each digital input

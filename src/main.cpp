@@ -17,7 +17,8 @@ extern volatile bool keyboard_flag_sync; //Keyboard some key was pressed synchro
 extern uint16_t pv_flag_sync; 			//Modbus new data available synchronization flag
 //genset_modbus.h
 extern uint16_t genset_flag_sync;		//Modbus new data available synchronization flag
-
+//digital_inputs.h
+extern volatile uint16_t digital_inputs_sync_flag;
 
 /*------------------------------------------------------------------
  * Global variables
@@ -88,14 +89,12 @@ void loop() {
 		prev_millis_1= millis(); //Update before code can increase the accuracy?
 
 		//Scheduler for modbus variables reading
-		const uint8_t scheduler_read_genset= 	0x00; //Read genset controller node
-		const uint8_t scheduler_read_pv= 		0x01; //Read PV inverter node
+		const uint8_t scheduler_read_genset= 	0x00;    //Read genset controller node
+		const uint8_t scheduler_read_pv= 		0x01;    //Read PV inverter node
 
 		static uint8_t scheduler= scheduler_read_genset; //Scheduler for node modbus read
 		static uint8_t pv_node_read= 		0; 			 //Set pv node index to read
 		static uint8_t genset_node_read= 	0;			 //Set genset node index to read
-
-
 		switch(scheduler){
 			case scheduler_read_genset:
 				//Actual node modbus variables transactions was finished
@@ -113,6 +112,12 @@ void loop() {
 					scheduler= scheduler_read_genset;
 				}
 				break;
+		}
+
+		//Manage digital inputs status
+		//Keep this pooling time as low as possible
+		if(digital_inputs_sync_flag){
+			manage_digital_inputs();
 		}
 	}
 
