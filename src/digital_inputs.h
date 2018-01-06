@@ -12,23 +12,12 @@
  * 						HEADERS
  * ----------------------------------------------------------------*/
 #include "hal/board.h"
+#include "digital_inputs_functions.h"
 
 
 /*------------------------------------------------------------------
  * 					GLOBAL CONSTANTS
  * ----------------------------------------------------------------*/
-//--------------DIGITAL INPUT FUNCTIONS LIST MASK-------------------
-//Digital input not used mask
-const uint16_t di_not_used				= 0x0000;
-//GCB status mask
-const uint16_t di_gcb_status 			= 0x0001;
-//MGCB status mask
-const uint16_t di_mgcb_status			= 0x0002;
-//MCB status mask
-const uint16_t di_mcb_status			= 0x0004;
-//Disable the power limitation for PV system
-const uint16_t di_disable_power_limit	= 0x0008;
-
 /**
  * Mask used to manage the digital inputs bits
  */
@@ -162,9 +151,17 @@ void manage_digital_inputs(){
 		di_change_detect(digital_input4);
 	}
 
+	//Save previous states
+	uint16_t prev_logical_states= di_logical_states;
+
 	//Verifies the logical state based on physical state and logic selection.
 	//XOR operation do exactly the logic used to set the logic states based on physical states.
 	di_logical_states= di_physical_states ^ di_logic_selection;
+
+	//Manage the functions associated with the digital inputs
+	if(prev_logical_states != di_logical_states){
+
+	}
 
 }
 
@@ -178,7 +175,7 @@ void di_change_detect(uint8_t digital_input){
 
 	//Verifies the physical state
 	switch(digital_input){
-		//Set or reset physical states
+		//Set reset physical states
 		case digital_input1:
 			level == di_activated ?	di_physical_states|= di_01 : di_physical_states&= ~di_01;
 		break;
