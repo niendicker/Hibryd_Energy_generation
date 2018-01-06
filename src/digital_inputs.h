@@ -138,7 +138,33 @@ void init_digital_inputs(){
 }
 
 /*------------------------------------------------------------------
- * Manage the physical and logical status of each digital input
+ * Manage the digital inputs logic and physical status.
+ * Function called from main loop when the synchronization flag is set
+ * ----------------------------------------------------------------*/
+void manage_digital_inputs(){
+	//Verifies the physical states
+	if(digital_inputs_sync_flag & di_01){
+		di_change_detect(digital_input1);
+	}
+	if(digital_inputs_sync_flag & di_02){
+		di_change_detect(digital_input2);
+	}
+	if(digital_inputs_sync_flag & di_03){
+		di_change_detect(digital_input3);
+	}
+	if(digital_inputs_sync_flag & di_04){
+		di_change_detect(digital_input4);
+	}
+
+	//Verifies the logical state based on physical state and logic selection.
+	//XOR operation do exactly the logic used to set the logic states based on physical states.
+	di_logical_states= di_physical_states ^ di_logic_selection;
+
+}
+
+
+/*------------------------------------------------------------------
+ * Manage the physical status of each digital input
  * @digital_input is the hardware pin number used as digital input
  * ----------------------------------------------------------------*/
 void di_change_detect(uint8_t digital_input){
@@ -172,31 +198,6 @@ void di_change_detect(uint8_t digital_input){
 				di_physical_states&= ~di_04; //Reset physical state
 		break;
 	}
-
-	//Verifies the logical state based on physical state and logic selection.
-	//XOR operation do exactly the logic used to set the logic states based on physical states.
-	di_logical_states= di_physical_states ^ di_logic_selection;
-}
-
-void di_read_all(){
-	static uint32_t last_call_ms= 0;
-	static uint16_t filter_physical_states= 0x0000;
-
-	uint32_t now_ms= millis();
-
-	digitalRead(digital_input1) == di_activated ? (filter_physical_states|= di_01) : (filter_physical_states&= ~di_01);
-	digitalRead(digital_input2) == di_activated ? (filter_physical_states|= di_02) : (filter_physical_states&= ~di_02);
-	digitalRead(digital_input3) == di_activated ? (filter_physical_states|= di_03) : (filter_physical_states&= ~di_03);
-	digitalRead(digital_input4) == di_activated ? (filter_physical_states|= di_04) : (filter_physical_states&= ~di_04);
-
-	//Filter the inputs read time to eliminate the "debouncing" effect
-	if((now_ms - last_call_ms) >= di_filter_time){
-		//Save the physical states
-
-
-		//Reset filter
-		last_call_ms= millis();
-	}
 }
 
 /*------------------------------------------------------------------
@@ -205,14 +206,13 @@ void di_read_all(){
  * ----------------------------------------------------------------*/
 void di_1_activated(){
 	static uint32_t last_interrupt_time= 0;
-
 	uint32_t interrupt_time= millis();
 
 	//Filter - the signal on input must be stable at least
 	//di_filter_time milliseconds to trigger the function.
 	if((interrupt_time - last_interrupt_time) >= di_filter_time){
-		//Manage digital inputs status variables
-		di_change_detect(digital_input1);
+		//Set status to manage the digital input 1
+		digital_inputs_sync_flag|= di_01;
 
 		//Reset time to next trigger
 		last_interrupt_time= millis();
@@ -225,14 +225,13 @@ void di_1_activated(){
  * ----------------------------------------------------------------*/
 void di_2_activated(){
 	static uint32_t last_interrupt_time= 0;
-
 	uint32_t interrupt_time= millis();
 
 	//Filter - the signal on input must be stable at least
 	//di_filter_time milliseconds to trigger the function.
 	if((interrupt_time - last_interrupt_time) >= di_filter_time){
-		//Manage digital inputs status variables
-		di_change_detect(digital_input2);
+		//Set status to manage the digital input 2
+		digital_inputs_sync_flag|= di_02;
 
 		//Reset time to next trigger
 		last_interrupt_time= millis();
@@ -245,14 +244,13 @@ void di_2_activated(){
  * ----------------------------------------------------------------*/
 void di_3_activated(){
 	static uint32_t last_interrupt_time= 0;
-
 	uint32_t interrupt_time= millis();
 
 	//Filter - the signal on input must be stable at least
 	//di_filter_time milliseconds to trigger the function.
 	if((interrupt_time - last_interrupt_time) >= di_filter_time){
-		//Manage digital inputs status variables
-		di_change_detect(digital_input3);
+		//Set status to manage the digital input 3
+		digital_inputs_sync_flag|= di_03;
 
 		//Reset time to next trigger
 		last_interrupt_time= millis();
@@ -265,14 +263,13 @@ void di_3_activated(){
  * ----------------------------------------------------------------*/
 void di_4_activated(){
 	static uint32_t last_interrupt_time= 0;
-
 	uint32_t interrupt_time= millis();
 
 	//Filter - the signal on input must be stable at least
 	//di_filter_time milliseconds to trigger the function.
 	if((interrupt_time - last_interrupt_time) >= di_filter_time){
-		//Manage digital inputs status variables
-		di_change_detect(digital_input4);
+		//Set status to manage the digital input 4
+		digital_inputs_sync_flag|= di_04;
 
 		//Reset time to next trigger
 		last_interrupt_time= millis();
