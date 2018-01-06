@@ -48,16 +48,11 @@ void loop() {
 	static unsigned long main_loop_time_average = 0;
 	static unsigned long main_loop_iteraction_count = 0;
 	static unsigned long prev_micros_main_loop = 0;
-	unsigned long main_loop_time_us = 0;
 
 //------------------- TIME LAPSE COMPUTATION -----------------------
-	//Main loop - time lapse computation Microseconds
-	unsigned long currentMicros= micros();
-	main_loop_time_us= (unsigned long)(currentMicros - prev_micros_main_loop);
+	//Main loop - time lapse average sum
+	main_loop_time_average_sum+= (unsigned long)(micros() - prev_micros_main_loop);
 	prev_micros_main_loop= micros();
-
-	//Main loop - time lapse average computation
-	main_loop_time_average_sum+= main_loop_time_us;
 	main_loop_iteraction_count++;
 
 	//Time lapse computation
@@ -135,8 +130,9 @@ void loop() {
 	}
 */
 //------------------ RESOURCE MANAGEMENT 500ms ---------------------
-	else if (time == 500) {
-		prev_millis_500= millis(); //Update before code can increase the accuracy?
+	else if (time_ms == 500) {
+		//Reset milliseconds to restart scheduler
+		time_ms= 0x0000;
 
 		//LED run indication
 		digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
@@ -145,7 +141,7 @@ void loop() {
 		main_loop_time_average= (main_loop_time_average_sum / main_loop_iteraction_count);
 		main_loop_time_average_sum= 0;
 		main_loop_iteraction_count= 0;
-		//Serial.println(main_loop_time_average);
+		Serial.println(main_loop_time_average);
 	}
 
 }
