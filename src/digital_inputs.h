@@ -178,29 +178,18 @@ void di_change_detect(uint8_t digital_input){
 
 	//Verifies the physical state
 	switch(digital_input){
+		//Set or reset physical states
 		case digital_input1:
-			if(level == di_activated)
-				di_physical_states|= di_01; //Set physical state
-			else
-				di_physical_states&= ~di_01; //Reset physical state
+			level == di_activated ?	di_physical_states|= di_01 : di_physical_states&= ~di_01;
 		break;
 		case digital_input2:
-			if(level == di_activated)
-				di_physical_states|= di_02; //Set physical state
-			else
-				di_physical_states&= ~di_02; //Reset physical state
+			level == di_activated ? di_physical_states|= di_02 : di_physical_states&= ~di_02;
 		break;
 		case digital_input3:
-			if(level == di_activated)
-				di_physical_states|= di_03; //Set physical state
-			else
-				di_physical_states&= ~di_03; //Reset physical state
+			level == di_activated ? di_physical_states|= di_03 : di_physical_states&= ~di_03;
 		break;
 		case digital_input4:
-			if(level == di_activated)
-				di_physical_states|= di_04; //Set physical state
-			else
-				di_physical_states&= ~di_04; //Reset physical state
+			level == di_activated ? di_physical_states|= di_04 : di_physical_states&= ~di_04;
 		break;
 	}
 }
