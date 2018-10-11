@@ -4,9 +4,7 @@
  * ----------------------------------------------------------------*/
 #include <Arduino.h>
 #include "main.h"
-#include "pv_modbus.h"
-#include "genset_modbus.h"
-#include "keyboard.h"
+
 
 /*------------------------------------------------------------------
  * External global synchronization variables
@@ -17,7 +15,8 @@ extern volatile bool keyboard_flag_sync; //Keyboard some key was pressed synchro
 extern uint16_t pv_flag_sync; 			//Modbus new data available synchronization flag
 //genset_modbus.h
 extern uint16_t genset_flag_sync;		//Modbus new data available synchronization flag
-
+//digital_inputs.h
+extern volatile uint16_t digital_inputs_sync_flag;
 
 /*------------------------------------------------------------------
  * Global variables
@@ -31,71 +30,49 @@ void setup() {
 	//Initialize all hardware
 	hw_init();
 
-	//Init PV system modbus interface
-	pv_init_modbus(pv_default_slave_addr);
-
-	//Init Genset modbus interface
-	genset_init_modbus(genset_default_slave_addr);
-
-	//Debug port
-	Serial.begin(115200);
-	Serial.println("--------------- SETUP -------------------");
-	//On-board LED
-	pinMode(LED_BUILTIN, OUTPUT);
-
-	//REMOVE ////////////////////////////////////////////
-	for(int i=0; i < pv_max_nodes; i++)
-		pv_set_node_type(i, Sungrow);
-
-	for (int i= 0; i < genset_max_nodes; i++)
-		genset_set_node_type(i, Sices);
-	/////////////////////////////////////////////////////
+	//Initialize the software features
+	sw_init();
 }
 
 /*------------------------------------------------------------------
  * LOOP
  * ----------------------------------------------------------------*/
 void loop() {
-	//Resource management interval control
-	static unsigned long prev_millis_1   = 0;
-	static unsigned long prev_millis_10  = 0;
-	static unsigned long prev_millis_100 = 0;
-	static unsigned long prev_millis_200 = 0;
-	static unsigned long prev_millis_500 = 0;
+	//Resource management interval control variable
+	static unsigned long prev_millis   = 0;
+	//Count the time for resource management scheduler
+	static uint16_t time_ms= 0;
 
 	//Main loop time
 	static unsigned long main_loop_time_average_sum = 0;
 	static unsigned long main_loop_time_average = 0;
 	static unsigned long main_loop_iteraction_count = 0;
 	static unsigned long prev_micros_main_loop = 0;
-	unsigned long main_loop_time_us = 0;
 
 //------------------- TIME LAPSE COMPUTATION -----------------------
+	//Main loop - time lapse average sum
+	main_loop_time_average_sum+= (unsigned long)(micros() - prev_micros_main_loop);
+	prev_micros_main_loop= micros();
+	main_loop_iteraction_count++;
+
 	//Time lapse computation
 	unsigned long currentMillis= millis();
 
-	//Main loop - time lapse computation Microseconds
-	unsigned long currentMicros= micros();
-	main_loop_time_us= (unsigned long)(currentMicros - prev_micros_main_loop);
-	prev_micros_main_loop= micros();
-
-	//Main loop - time lapse average computation
-	main_loop_time_average_sum+= main_loop_time_us;
-	main_loop_iteraction_count++;
-
 //------------------ RESOURCE MANAGEMENT 1ms ---------------------
-	if ((unsigned long)(currentMillis - prev_millis_1) >= 1) {
-		prev_millis_1= millis(); //Update before code can increase the accuracy?
+	if ((unsigned long)(currentMillis - prev_millis) >= 1) {
+		prev_millis= millis(); //Update before code can increase the accuracy?
+
+		//Check and update the milliseconds from last reset
+		//The value for resources management is restricted to 1 second (1000ms)
+		time_ms > 1000 ? time_ms= 0 : time_ms++;
 
 		//Scheduler for modbus variables reading
-		const uint8_t scheduler_read_genset= 	0x00; //Read genset controller node
-		const uint8_t scheduler_read_pv= 		0x01; //Read PV inverter node
+		const uint8_t scheduler_read_genset= 	0x00;    //Read genset controller node
+		const uint8_t scheduler_read_pv= 		0x01;    //Read PV inverter node
 
 		static uint8_t scheduler= scheduler_read_genset; //Scheduler for node modbus read
 		static uint8_t pv_node_read= 		0; 			 //Set pv node index to read
 		static uint8_t genset_node_read= 	0;			 //Set genset node index to read
-
-
 		switch(scheduler){
 			case scheduler_read_genset:
 				//Actual node modbus variables transactions was finished
@@ -114,12 +91,16 @@ void loop() {
 				}
 				break;
 		}
+
+		//Manage digital inputs status
+		//Keep this pooling time as low as possible
+		if(digital_inputs_sync_flag){
+			manage_digital_inputs();
+		}
 	}
 
 //------------------ RESOURCE MANAGEMENT 10ms ---------------------
-	if ((unsigned long)(currentMillis - prev_millis_10) >= 10) {
-		prev_millis_10= millis(); //Update before code can increase the accuracy?
-
+	if (time_ms == 10) {
 		//GENSETS NEW MODBUS VALUES
 		if(genset_flag_sync){
 			Serial.println("manage_genset_system()");
@@ -134,9 +115,7 @@ void loop() {
 }
 
 //------------------ RESOURCE MANAGEMENT 100ms ---------------------
-	if ((unsigned long)(currentMillis - prev_millis_100) >= 100) {
-		prev_millis_100= millis(); //Update before code can increase the accuracy?
-
+	else if (time_ms == 100) {
 		//KEYBOARD
 		if(keyboard_flag_sync){
 			Serial.println("manage_keyboard()");
@@ -146,14 +125,14 @@ void loop() {
 	}
 
 //------------------ RESOURCE MANAGEMENT 200ms ---------------------
-	if ((unsigned long)(currentMillis - prev_millis_200) >= 200) {
-		prev_millis_200= millis(); //Update before code can increase the accuracy?
+/**	if (time_ms >= 200) {
 
 	}
-
+*/
 //------------------ RESOURCE MANAGEMENT 500ms ---------------------
-	if ((unsigned long)(currentMillis - prev_millis_500) >= 500) {
-		prev_millis_500= millis(); //Update before code can increase the accuracy?
+	else if (time_ms == 500) {
+		//Reset milliseconds to restart scheduler
+		time_ms= 0x0000;
 
 		//LED run indication
 		digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
@@ -162,7 +141,7 @@ void loop() {
 		main_loop_time_average= (main_loop_time_average_sum / main_loop_iteraction_count);
 		main_loop_time_average_sum= 0;
 		main_loop_iteraction_count= 0;
-		//Serial.println(main_loop_time_average);
+		Serial.println(main_loop_time_average);
 	}
 
 }
